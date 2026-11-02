@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>나의 루틴표</title>
 <style>
-  /* 레이아웃: 공책 한 장 — 주 넘기기, 요일별 표(체크 + 메모) */
+  /* 레이아웃: 공책 한 권 — 해 넘기기, 올해 합계, 12달 달력 + 고른 날의 체크와 메모 */
   :root {
     --paper: #f4ecdc;
     --sheet: #fbf6ec;
@@ -16,6 +16,13 @@
     --accent: #8a5a36;
     --accent-soft: #efe0c8;
     --done: #4d7a46;
+    --level-1: #e6ead6;
+    --level-2: #cfdcc0;
+    --level-3: #a9c49f;
+    --dot-gym: #2f5d7c;
+    --dot-kw: #a8472f;
+    --dot-shoot: #c27a1d;
+    --dot-detail: #3b2a1e;
     --shadow: 0 1px 0 rgba(90, 60, 30, .06), 0 6px 18px rgba(90, 60, 30, .08);
     --font: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
     --font-hand: "Gungsuh", "Batang", "AppleMyungjo", "Noto Serif KR", serif;
@@ -29,16 +36,17 @@
     font-size: 15px;
     line-height: 1.5;
   }
-  .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px 56px; display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 24px 16px 56px; display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
   .num { font-variant-numeric: tabular-nums; }
   button { font: inherit; cursor: pointer; color: inherit; }
-  button:focus-visible, input:focus-visible, textarea:focus-visible, .table-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
   h1 { margin: 0; font-family: var(--font-hand); font-size: 1.9rem; font-weight: 700; letter-spacing: .02em; text-align: center; }
+  .sheet { background: var(--sheet); border-radius: 6px; box-shadow: var(--shadow); }
 
-  /* 주 넘기기 */
-  .week { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
-  .week b { font-size: 1.15rem; min-width: 13ch; text-align: center; }
+  /* 해 넘기기 */
+  .year { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+  .year b { font-size: 1.3rem; min-width: 6ch; text-align: center; }
   .icon-btn {
     border: 1.5px solid var(--rule-strong); background: var(--sheet); border-radius: 50%;
     width: 40px; height: 40px; font-size: 1rem; display: grid; place-items: center;
@@ -46,23 +54,59 @@
   .icon-btn:hover { background: var(--accent-soft); }
   .today-btn { border: none; background: none; color: var(--ink-soft); text-decoration: underline; font-size: .85rem; padding: 8px 4px; }
 
-  /* 표 */
-  .table-scroll { overflow-x: auto; background: var(--sheet); border-radius: 6px; box-shadow: var(--shadow); }
-  table { width: 100%; min-width: 860px; border-collapse: collapse; }
-  th, td { border-bottom: 1px solid var(--rule); padding: 0; text-align: center; vertical-align: middle; }
-  thead th { padding: 12px 6px; border-bottom: 1.5px solid var(--rule-strong); font-size: .9rem; font-weight: 700; word-break: keep-all; }
-  thead small { display: block; color: var(--ink-soft); font-size: .8rem; font-weight: 400; }
-  tbody th { padding: 8px 10px; font-weight: 700; white-space: nowrap; }
-  tbody th small { display: block; color: var(--ink-soft); font-size: .8rem; font-weight: 400; }
-  .col-day { width: 72px; position: sticky; left: 0; z-index: 1; background: var(--sheet); }
-  .col-check { width: 84px; }
-  .group-start { border-left: 1.5px solid var(--rule-strong); }
+  /* 올해 합계 */
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 1px; padding: 0; margin: 0; list-style: none; overflow: hidden; }
+  .summary li { padding: 10px 14px; box-shadow: 0 0 0 1px var(--rule); }
+  .summary span { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--ink-soft); }
+  .summary strong { font-size: 1.1rem; }
+  .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 1px var(--sheet); }
+  .dot.gym { background: var(--dot-gym); }
+  .dot.kw { background: var(--dot-kw); }
+  .dot.shoot { background: var(--dot-shoot); }
+  .dot.detail { background: var(--dot-detail); }
 
-  tr.today th, tr.today td { background: var(--accent-soft); }
+  /* 달력 + 고른 날 */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 18px; align-items: start; }
+  .months { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .month { padding: 12px 14px 14px; }
+  .month h2 { margin: 0 0 8px; font-size: 1rem; font-weight: 700; color: var(--accent); }
+  .month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+  .weekday { text-align: center; font-size: .75rem; color: var(--ink-soft); padding-bottom: 2px; }
 
-  .check { display: grid; place-items: center; min-height: 52px; cursor: pointer; }
+  .day {
+    position: relative; aspect-ratio: 1; min-height: 34px; padding: 3px 0 0;
+    border: none; border-radius: 4px; background: transparent;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font-size: .82rem; scroll-margin-top: 12px;
+  }
+  .day:hover { background: var(--accent-soft); }
+  .day.l1 { background: var(--level-1); }
+  .day.l2 { background: var(--level-2); }
+  .day.l3 { background: var(--level-3); }
+  .day.l4 { background: var(--done); color: var(--sheet); }
+  .day.today b { text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 2px; }
+  .day b { font-weight: 400; }
+  .day.today b { font-weight: 700; }
+  .day.selected { box-shadow: inset 0 0 0 2px var(--accent); }
+  .day.l4.selected { box-shadow: inset 0 0 0 2px var(--ink); }
+  .day.has-memo::after {
+    content: ""; position: absolute; top: 0; right: 0;
+    border-style: solid; border-width: 0 7px 7px 0;
+    border-color: transparent var(--accent) transparent transparent; border-top-right-radius: 4px;
+  }
+  .dots { display: flex; gap: 2px; height: 7px; }
+  .dots .dot { width: 5px; height: 5px; }
+
+  /* 고른 날 */
+  .panel { position: sticky; top: 16px; padding: 16px 18px; display: grid; gap: 12px; max-height: calc(100vh - 32px); overflow-y: auto; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .panel-head h2 { margin: 0; font-size: 1.15rem; }
+  .close-btn { display: none; border: none; background: none; font-size: 1.4rem; line-height: 1; width: 40px; height: 40px; border-radius: 50%; }
+  .close-btn:hover { background: var(--accent-soft); }
+  .group h3 { margin: 0; padding-bottom: 4px; border-bottom: 1.5px solid var(--rule-strong); font-size: .85rem; font-weight: 700; color: var(--accent); }
+  .check { display: flex; align-items: center; gap: 10px; min-height: 44px; border-bottom: 1px solid var(--rule); cursor: pointer; }
   .check input {
-    appearance: none; -webkit-appearance: none; margin: 0;
+    appearance: none; -webkit-appearance: none; margin: 0; flex: none;
     width: 24px; height: 24px; border-radius: 4px; cursor: pointer;
     border: 2px solid var(--ink-soft); background: var(--sheet);
     display: grid; place-content: center;
@@ -72,42 +116,58 @@
     content: ""; width: 6px; height: 11px; border: solid var(--sheet); border-width: 0 2.5px 2.5px 0;
     transform: rotate(45deg) translate(-1px, -1px);
   }
-
+  .check-name { flex: 1; min-width: 0; font-weight: 700; font-size: .95rem; }
+  .check-meta { color: var(--ink-soft); font-size: .8rem; text-align: right; }
+  .memo-label { display: grid; gap: 6px; font-size: .85rem; font-weight: 700; color: var(--accent); }
   .memo {
-    display: block; width: 100%; min-height: 52px; resize: none; overflow: hidden;
-    border: none; background: transparent; color: var(--ink);
-    font: inherit; line-height: 1.5; padding: 14px 12px;
+    width: 100%; min-height: 84px; resize: vertical;
+    border: 1.5px solid var(--rule-strong); border-radius: 6px; background: var(--sheet); color: var(--ink);
+    font: inherit; font-size: 16px; font-weight: 400; padding: 8px 10px;
   }
   .memo::placeholder { color: var(--ink-soft); }
 
-  tfoot th, tfoot td { border-bottom: none; border-top: 1.5px solid var(--rule-strong); padding: 10px 6px; font-size: .9rem; font-weight: 700; }
-  tfoot small { display: block; color: var(--ink-soft); font-size: .78rem; font-weight: 400; }
-  tfoot .met { color: var(--done); }
-  tfoot .foot-note { text-align: left; padding-left: 12px; font-weight: 400; color: var(--ink-soft); font-size: .85rem; }
-
   .note { color: var(--ink-soft); font-size: .85rem; margin: 0; text-align: center; }
+
+  /* 넓은 화면의 옆 칸은 좁아서 설명을 이름 아래로 */
+  @media (min-width: 901px) {
+    .check { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; padding: 2px 0; }
+    .check input { grid-row: span 2; }
+    .check-meta { grid-column: 2; text-align: left; }
+  }
+
+  /* 좁은 화면: 고른 날은 아래에서 올라오는 시트로 */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .panel {
+      display: none; position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 10;
+      max-height: 70vh; border-radius: 12px 12px 0 0;
+      box-shadow: 0 -6px 24px rgba(90, 60, 30, .22);
+    }
+    .panel.open { display: grid; }
+    .close-btn { display: grid; place-items: center; }
+    body.sheet-open { padding-bottom: 70vh; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>나의 루틴표</h1>
 
-  <nav class="week" aria-label="주 넘기기">
-    <button class="icon-btn" id="prevWeek" type="button" aria-label="지난주">◀</button>
-    <b class="num" id="weekLabel" aria-live="polite"></b>
-    <button class="icon-btn" id="nextWeek" type="button" aria-label="다음 주">▶</button>
-    <button class="today-btn" id="thisWeek" type="button">이번 주로</button>
+  <nav class="year" aria-label="해 넘기기">
+    <button class="icon-btn" id="prevYear" type="button" aria-label="지난해">◀</button>
+    <b class="num" id="yearLabel" aria-live="polite"></b>
+    <button class="icon-btn" id="nextYear" type="button" aria-label="다음 해">▶</button>
+    <button class="today-btn" id="thisYear" type="button">올해로</button>
   </nav>
 
-  <div class="table-scroll" tabindex="0" role="region" aria-label="요일별 루틴표">
-    <table>
-      <thead id="thead"></thead>
-      <tbody id="tbody"></tbody>
-      <tfoot id="tfoot"></tfoot>
-    </table>
+  <ul class="summary sheet" id="summary" aria-label="올해 합계"></ul>
+
+  <div class="layout">
+    <main class="months" id="months"></main>
+    <aside class="panel sheet" id="panel" aria-label="고른 날의 루틴"></aside>
   </div>
 
-  <p class="note">체크와 메모는 이 브라우저에만 저장돼요.</p>
+  <p class="note">칸 색이 진할수록 매일 하는 네 가지를 많이 한 날이고, 모서리 표시는 메모가 있는 날이에요. 네 가지를 모두 하면 55분이에요.<br>체크와 메모는 이 브라우저에만 저장돼요.</p>
 </div>
 
 <script>
@@ -119,7 +179,16 @@
     { id: "read", name: "독서", when: "30분", goal: "daily" },
     { id: "gym", name: "운동", when: "주 5회", goal: "weekly" },
     { id: "kw", name: "키워드분석", when: "2주에 1번", goal: "biweekly" },
+    { id: "shoot", name: "촬영", when: "샘플 구매 시", goal: "asNeeded" },
+    { id: "detail", name: "상세페이지", when: "필요 시", goal: "asNeeded" },
   ];
+  const GROUPS = [
+    { title: "매일", goals: ["daily"] },
+    { title: "정해진 주기", goals: ["weekly", "biweekly"] },
+    { title: "필요할 때", goals: ["asNeeded"] },
+  ];
+  const DAILY = ROUTINES.filter(r => r.goal === "daily");
+  const MARKED = ROUTINES.filter(r => r.goal !== "daily");
   const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
   const WEEKLY_GOAL = 5;
   // 키워드분석 2주 구간을 나누는 기준 월요일
@@ -132,6 +201,8 @@
   const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
   const dayNumber = d => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS;
   const shortDate = d => `${d.getMonth() + 1}/${d.getDate()}`;
+  const weekdayOf = d => WEEKDAYS[(d.getDay() + 6) % 7];
+  const longDate = d => `${d.getMonth() + 1}월 ${d.getDate()}일 ${weekdayOf(d)}요일`;
 
   function load() {
     try {
@@ -146,7 +217,11 @@
   }
 
   const days = load();
-  let weekStart = mondayOf(new Date());
+  const today = new Date();
+  let year = today.getFullYear();
+  let selected = today;
+  const cells = new Map();
+  const metaEls = new Map();
 
   const getDay = key => days[key] || {};
   function setDayValue(key, field, value) {
@@ -161,150 +236,260 @@
     for (let i = 0; i < length; i++) if (getDay(dateKey(addDays(start, i)))[id]) n++;
     return n;
   };
+  const countYear = (id, y) => {
+    let n = 0;
+    for (const key in days) if (key.startsWith(y + "-") && days[key][id]) n++;
+    return n;
+  };
 
   function biweekStart(d) {
     const index = Math.floor((dayNumber(d) - dayNumber(BIWEEK_ANCHOR)) / 14);
     return addDays(BIWEEK_ANCHOR, index * 14);
   }
 
-  function growMemo(area) {
-    area.style.height = "auto";
-    area.style.height = area.scrollHeight + "px";
-  }
-
-  function renderHead() {
-    const tr = document.createElement("tr");
-    const corner = document.createElement("th");
-    corner.scope = "col";
-    corner.className = "col-day";
-    corner.textContent = "요일";
-    tr.appendChild(corner);
-    for (const r of ROUTINES) {
-      const th = document.createElement("th");
-      th.scope = "col";
-      th.className = "col-check" + (r.id === "gym" ? " group-start" : "");
-      th.textContent = r.name;
-      const small = document.createElement("small");
-      small.textContent = r.when;
-      th.appendChild(small);
-      tr.appendChild(th);
+  function metaText(r, date) {
+    if (r.goal === "weekly") return `${r.when} · 이 주 ${countChecked(r.id, mondayOf(date), 7)} / ${WEEKLY_GOAL}회`;
+    if (r.goal === "biweekly") {
+      const start = biweekStart(date);
+      return `${r.when} · ${shortDate(start)}~${shortDate(addDays(start, 13))} ${countChecked(r.id, start, 14)} / 1회`;
     }
-    const memo = document.createElement("th");
-    memo.scope = "col";
-    memo.className = "group-start";
-    memo.textContent = "메모";
-    tr.appendChild(memo);
-    document.getElementById("thead").replaceChildren(tr);
+    if (r.goal === "asNeeded") return `${r.when} · ${date.getFullYear()}년 ${countYear(r.id, date.getFullYear())}회`;
+    return r.when;
   }
 
-  function renderBody() {
-    const todayKey = dateKey(new Date());
-    const rows = WEEKDAYS.map((weekday, i) => {
-      const date = addDays(weekStart, i);
-      const key = dateKey(date);
-      const day = getDay(key);
-      const tr = document.createElement("tr");
-      if (key === todayKey) tr.className = "today";
+  function updateCell(key) {
+    const cell = cells.get(key);
+    if (!cell) return;
+    const { button, dots, date } = cell;
+    const day = getDay(key);
+    const level = DAILY.filter(r => day[r.id]).length;
+    const marked = MARKED.filter(r => day[r.id]);
+    button.classList.remove("l1", "l2", "l3", "l4");
+    if (level) button.classList.add("l" + level);
+    button.classList.toggle("has-memo", !!day.memo);
+    dots.replaceChildren(...marked.map(r => {
+      const dot = document.createElement("i");
+      dot.className = "dot " + r.id;
+      return dot;
+    }));
+    const parts = [longDate(date), `매일 루틴 ${level} / ${DAILY.length}`, ...marked.map(r => r.name)];
+    if (day.memo) parts.push("메모 있음");
+    button.setAttribute("aria-label", parts.join(", "));
+  }
 
-      const th = document.createElement("th");
-      th.scope = "row";
-      th.className = "col-day";
-      if (key === todayKey) th.setAttribute("aria-current", "date");
-      th.textContent = weekday;
-      const small = document.createElement("small");
-      small.className = "num";
-      small.textContent = shortDate(date);
-      th.appendChild(small);
-      tr.appendChild(th);
+  function renderSummary() {
+    const items = ROUTINES.map(r => {
+      const li = document.createElement("li");
+      const label = document.createElement("span");
+      if (r.goal !== "daily") {
+        const dot = document.createElement("i");
+        dot.className = "dot " + r.id;
+        label.appendChild(dot);
+      }
+      label.append(r.name);
+      const strong = document.createElement("strong");
+      strong.className = "num";
+      strong.textContent = `${countYear(r.id, year)}${r.goal === "daily" ? "일" : "회"}`;
+      li.append(label, strong);
+      return li;
+    });
+    document.getElementById("summary").replaceChildren(...items);
+  }
 
-      for (const r of ROUTINES) {
-        const td = document.createElement("td");
-        if (r.id === "gym") td.className = "group-start";
+  function renderMonths() {
+    const todayKey = dateKey(today);
+    const selectedKey = dateKey(selected);
+    cells.clear();
+    const months = [];
+    for (let m = 0; m < 12; m++) {
+      const section = document.createElement("section");
+      section.className = "month sheet";
+      const h2 = document.createElement("h2");
+      h2.textContent = `${m + 1}월`;
+      const grid = document.createElement("div");
+      grid.className = "month-grid";
+      for (const weekday of WEEKDAYS) {
+        const head = document.createElement("div");
+        head.className = "weekday";
+        head.setAttribute("aria-hidden", "true");
+        head.textContent = weekday;
+        grid.appendChild(head);
+      }
+      const first = new Date(year, m, 1);
+      for (let i = 0; i < (first.getDay() + 6) % 7; i++) grid.appendChild(document.createElement("div"));
+      const length = new Date(year, m + 1, 0).getDate();
+      for (let d = 1; d <= length; d++) {
+        const date = new Date(year, m, d);
+        const key = dateKey(date);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "day num";
+        button.dataset.key = key;
+        if (key === todayKey) { button.classList.add("today"); button.setAttribute("aria-current", "date"); }
+        const isSelected = key === selectedKey;
+        button.classList.toggle("selected", isSelected);
+        button.setAttribute("aria-pressed", isSelected);
+        button.tabIndex = isSelected ? 0 : -1;
+        const num = document.createElement("b");
+        num.textContent = d;
+        const dots = document.createElement("span");
+        dots.className = "dots";
+        button.append(num, dots);
+        button.addEventListener("click", () => { selectDate(date); openSheet(); });
+        cells.set(key, { button, dots, date });
+        updateCell(key);
+        grid.appendChild(button);
+      }
+      section.append(h2, grid);
+      months.push(section);
+    }
+    document.getElementById("months").replaceChildren(...months);
+  }
+
+  function renderPanel() {
+    const date = selected;
+    const key = dateKey(date);
+    const day = getDay(key);
+    const panel = document.getElementById("panel");
+    metaEls.clear();
+
+    const head = document.createElement("div");
+    head.className = "panel-head";
+    const h2 = document.createElement("h2");
+    h2.textContent = longDate(date);
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "close-btn";
+    close.setAttribute("aria-label", "닫기");
+    close.textContent = "×";
+    close.addEventListener("click", closeSheet);
+    head.append(h2, close);
+
+    const groups = GROUPS.map(group => {
+      const section = document.createElement("div");
+      section.className = "group";
+      const h3 = document.createElement("h3");
+      h3.textContent = group.title;
+      section.appendChild(h3);
+      for (const r of ROUTINES.filter(r => group.goals.includes(r.goal))) {
         const label = document.createElement("label");
         label.className = "check";
         const box = document.createElement("input");
         box.type = "checkbox";
         box.checked = !!day[r.id];
-        box.setAttribute("aria-label", `${shortDate(date)} ${weekday}요일 ${r.name}`);
         box.addEventListener("change", () => {
           setDayValue(key, r.id, box.checked);
-          renderFoot();
+          updateCell(key);
+          renderSummary();
+          updateMeta();
         });
-        label.appendChild(box);
-        td.appendChild(label);
-        tr.appendChild(td);
+        const name = document.createElement("span");
+        name.className = "check-name";
+        name.textContent = r.name;
+        const meta = document.createElement("span");
+        meta.className = "check-meta num";
+        metaEls.set(r, meta);
+        label.append(box, name, meta);
+        section.appendChild(label);
       }
-
-      const memoCell = document.createElement("td");
-      memoCell.className = "group-start";
-      const area = document.createElement("textarea");
-      area.className = "memo";
-      area.rows = 1;
-      area.value = day.memo || "";
-      area.placeholder = "메모";
-      area.setAttribute("aria-label", `${shortDate(date)} ${weekday}요일 메모`);
-      area.addEventListener("input", () => {
-        setDayValue(key, "memo", area.value);
-        growMemo(area);
-      });
-      memoCell.appendChild(area);
-      tr.appendChild(memoCell);
-      return tr;
+      return section;
     });
-    document.getElementById("tbody").replaceChildren(...rows);
-    document.querySelectorAll(".memo").forEach(growMemo);
+
+    const memoLabel = document.createElement("label");
+    memoLabel.className = "memo-label";
+    memoLabel.textContent = "메모";
+    const area = document.createElement("textarea");
+    area.className = "memo";
+    area.value = day.memo || "";
+    area.placeholder = "이날 남길 말을 적어 주세요";
+    area.addEventListener("input", () => {
+      setDayValue(key, "memo", area.value);
+      updateCell(key);
+    });
+    memoLabel.appendChild(area);
+
+    panel.replaceChildren(head, ...groups, memoLabel);
+    updateMeta();
   }
 
-  function renderFoot() {
-    const tr = document.createElement("tr");
-    const th = document.createElement("th");
-    th.scope = "row";
-    th.className = "col-day";
-    th.textContent = "합계";
-    tr.appendChild(th);
+  function updateMeta() {
+    for (const [r, el] of metaEls) el.textContent = metaText(r, selected);
+  }
 
-    for (const r of ROUTINES) {
-      const td = document.createElement("td");
-      td.className = "num" + (r.id === "gym" ? " group-start" : "");
-      if (r.goal === "biweekly") {
-        const start = biweekStart(weekStart);
-        const n = countChecked(r.id, start, 14);
-        if (n >= 1) td.classList.add("met");
-        td.textContent = `${n} / 1회`;
-        const small = document.createElement("small");
-        small.textContent = `${shortDate(start)}~${shortDate(addDays(start, 13))}`;
-        td.appendChild(small);
-      } else {
-        const goal = r.goal === "weekly" ? WEEKLY_GOAL : 7;
-        const n = countChecked(r.id, weekStart, 7);
-        if (n >= goal) td.classList.add("met");
-        td.textContent = r.goal === "weekly" ? `${n} / ${goal}회` : `${n} / ${goal}일`;
-      }
-      tr.appendChild(td);
+  function selectDate(date, focus) {
+    const prev = cells.get(dateKey(selected));
+    if (prev) {
+      prev.button.classList.remove("selected");
+      prev.button.setAttribute("aria-pressed", "false");
+      prev.button.tabIndex = -1;
     }
-
-    const note = document.createElement("td");
-    note.className = "group-start foot-note";
-    note.textContent = "매일 네 가지를 모두 하면 55분이에요.";
-    tr.appendChild(note);
-    document.getElementById("tfoot").replaceChildren(tr);
+    selected = date;
+    const cell = cells.get(dateKey(date));
+    if (cell) {
+      cell.button.classList.add("selected");
+      cell.button.setAttribute("aria-pressed", "true");
+      cell.button.tabIndex = 0;
+      if (focus) cell.button.focus();
+    }
+    renderPanel();
   }
 
-  function renderWeek() {
-    const end = addDays(weekStart, 6);
-    document.getElementById("weekLabel").textContent =
-      `${weekStart.getFullYear()}년 ${shortDate(weekStart)} ~ ${shortDate(end)}`;
-    document.getElementById("thisWeek").hidden = dateKey(weekStart) === dateKey(mondayOf(new Date()));
-    renderBody();
-    renderFoot();
+  const isNarrow = () => window.matchMedia("(max-width: 900px)").matches;
+
+  function openSheet() {
+    if (!isNarrow()) return;
+    document.getElementById("panel").classList.add("open");
+    document.body.classList.add("sheet-open");
+    const cell = cells.get(dateKey(selected));
+    if (cell) cell.button.scrollIntoView({ block: "start" });
+    document.querySelector("#panel .close-btn").focus();
   }
 
-  document.getElementById("prevWeek").addEventListener("click", () => { weekStart = addDays(weekStart, -7); renderWeek(); });
-  document.getElementById("nextWeek").addEventListener("click", () => { weekStart = addDays(weekStart, 7); renderWeek(); });
-  document.getElementById("thisWeek").addEventListener("click", () => { weekStart = mondayOf(new Date()); renderWeek(); });
+  function closeSheet() {
+    const panel = document.getElementById("panel");
+    const wasOpen = panel.classList.contains("open");
+    panel.classList.remove("open");
+    document.body.classList.remove("sheet-open");
+    const cell = cells.get(dateKey(selected));
+    if (cell && wasOpen) cell.button.focus();
+  }
 
-  renderHead();
-  renderWeek();
+  function renderYear() {
+    document.getElementById("yearLabel").textContent = `${year}년`;
+    document.getElementById("thisYear").hidden = year === today.getFullYear();
+    renderSummary();
+    renderMonths();
+    renderPanel();
+  }
+
+  function goToYear(y) {
+    year = y;
+    selected = y === today.getFullYear() ? today : new Date(y, 0, 1);
+    closeSheet();
+    renderYear();
+  }
+
+  document.getElementById("prevYear").addEventListener("click", () => goToYear(year - 1));
+  document.getElementById("nextYear").addEventListener("click", () => goToYear(year + 1));
+  document.getElementById("thisYear").addEventListener("click", () => goToYear(today.getFullYear()));
+
+  // 달력 안에서는 화살표로 날짜 이동
+  const ARROWS = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+  document.getElementById("months").addEventListener("keydown", e => {
+    if (!(e.key in ARROWS) || !e.target.dataset.key) return;
+    e.preventDefault();
+    const next = addDays(selected, ARROWS[e.key]);
+    if (next.getFullYear() === year) selectDate(next, true);
+  });
+  document.getElementById("panel").addEventListener("keydown", e => {
+    if (e.key === "Escape" && isNarrow()) closeSheet();
+  });
+
+  renderYear();
+  // 열 때마다 오늘이 보이도록
+  history.scrollRestoration = "manual";
+  const todayCell = cells.get(dateKey(today));
+  if (todayCell) todayCell.button.scrollIntoView({ block: "center" });
 </script>
 </body>
 </html>
