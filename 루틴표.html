@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>나의 루틴표</title>
+<style>
+  /* 레이아웃: 공책 한 장 — 주 넘기기, 요일별 표(체크 + 메모) */
+  :root {
+    --paper: #f4ecdc;
+    --sheet: #fbf6ec;
+    --ink: #3b2a1e;
+    --ink-soft: #7a6553;
+    --rule: #e6d9c2;
+    --rule-strong: #d6c4a6;
+    --accent: #8a5a36;
+    --accent-soft: #efe0c8;
+    --done: #4d7a46;
+    --shadow: 0 1px 0 rgba(90, 60, 30, .06), 0 6px 18px rgba(90, 60, 30, .08);
+    --font: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    --font-hand: "Gungsuh", "Batang", "AppleMyungjo", "Noto Serif KR", serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px 56px; display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+  .num { font-variant-numeric: tabular-nums; }
+  button { font: inherit; cursor: pointer; color: inherit; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, .table-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  h1 { margin: 0; font-family: var(--font-hand); font-size: 1.9rem; font-weight: 700; letter-spacing: .02em; text-align: center; }
+
+  /* 주 넘기기 */
+  .week { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+  .week b { font-size: 1.15rem; min-width: 13ch; text-align: center; }
+  .icon-btn {
+    border: 1.5px solid var(--rule-strong); background: var(--sheet); border-radius: 50%;
+    width: 40px; height: 40px; font-size: 1rem; display: grid; place-items: center;
+  }
+  .icon-btn:hover { background: var(--accent-soft); }
+  .today-btn { border: none; background: none; color: var(--ink-soft); text-decoration: underline; font-size: .85rem; padding: 8px 4px; }
+
+  /* 표 */
+  .table-scroll { overflow-x: auto; background: var(--sheet); border-radius: 6px; box-shadow: var(--shadow); }
+  table { width: 100%; min-width: 860px; border-collapse: collapse; }
+  th, td { border-bottom: 1px solid var(--rule); padding: 0; text-align: center; vertical-align: middle; }
+  thead th { padding: 12px 6px; border-bottom: 1.5px solid var(--rule-strong); font-size: .9rem; font-weight: 700; word-break: keep-all; }
+  thead small { display: block; color: var(--ink-soft); font-size: .8rem; font-weight: 400; }
+  tbody th { padding: 8px 10px; font-weight: 700; white-space: nowrap; }
+  tbody th small { display: block; color: var(--ink-soft); font-size: .8rem; font-weight: 400; }
+  .col-day { width: 72px; position: sticky; left: 0; z-index: 1; background: var(--sheet); }
+  .col-check { width: 84px; }
+  .group-start { border-left: 1.5px solid var(--rule-strong); }
+
+  tr.today th, tr.today td { background: var(--accent-soft); }
+
+  .check { display: grid; place-items: center; min-height: 52px; cursor: pointer; }
+  .check input {
+    appearance: none; -webkit-appearance: none; margin: 0;
+    width: 24px; height: 24px; border-radius: 4px; cursor: pointer;
+    border: 2px solid var(--ink-soft); background: var(--sheet);
+    display: grid; place-content: center;
+  }
+  .check input:checked { background: var(--done); border-color: var(--done); }
+  .check input:checked::after {
+    content: ""; width: 6px; height: 11px; border: solid var(--sheet); border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg) translate(-1px, -1px);
+  }
+
+  .memo {
+    display: block; width: 100%; min-height: 52px; resize: none; overflow: hidden;
+    border: none; background: transparent; color: var(--ink);
+    font: inherit; line-height: 1.5; padding: 14px 12px;
+  }
+  .memo::placeholder { color: var(--ink-soft); }
+
+  tfoot th, tfoot td { border-bottom: none; border-top: 1.5px solid var(--rule-strong); padding: 10px 6px; font-size: .9rem; font-weight: 700; }
+  tfoot small { display: block; color: var(--ink-soft); font-size: .78rem; font-weight: 400; }
+  tfoot .met { color: var(--done); }
+  tfoot .foot-note { text-align: left; padding-left: 12px; font-weight: 400; color: var(--ink-soft); font-size: .85rem; }
+
+  .note { color: var(--ink-soft); font-size: .85rem; margin: 0; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>나의 루틴표</h1>
+
+  <nav class="week" aria-label="주 넘기기">
+    <button class="icon-btn" id="prevWeek" type="button" aria-label="지난주">◀</button>
+    <b class="num" id="weekLabel" aria-live="polite"></b>
+    <button class="icon-btn" id="nextWeek" type="button" aria-label="다음 주">▶</button>
+    <button class="today-btn" id="thisWeek" type="button">이번 주로</button>
+  </nav>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="요일별 루틴표">
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+      <tfoot id="tfoot"></tfoot>
+    </table>
+  </div>
+
+  <p class="note">체크와 메모는 이 브라우저에만 저장돼요.</p>
+</div>
+
+<script>
+  const STORAGE_KEY = "my-daily-routine-v1";
+  const ROUTINES = [
+    { id: "data", name: "데이터분석", when: "5분", goal: "daily" },
+    { id: "ref", name: "레퍼런스 분석", when: "10분", goal: "daily" },
+    { id: "dev", name: "디벨롭", when: "10분", goal: "daily" },
+    { id: "read", name: "독서", when: "30분", goal: "daily" },
+    { id: "gym", name: "운동", when: "주 5회", goal: "weekly" },
+    { id: "kw", name: "키워드분석", when: "2주에 1번", goal: "biweekly" },
+  ];
+  const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
+  const WEEKLY_GOAL = 5;
+  // 키워드분석 2주 구간을 나누는 기준 월요일
+  const BIWEEK_ANCHOR = new Date(2026, 10, 2);
+
+  const DAY_MS = 86400000;
+  const pad = n => String(n).padStart(2, "0");
+  const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
+  const dayNumber = d => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS;
+  const shortDate = d => `${d.getMonth() + 1}/${d.getDate()}`;
+
+  function load() {
+    try {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (data && typeof data === "object" && !Array.isArray(data)) return data;
+    } catch (e) {}
+    return {};
+  }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(days)); } catch (e) {}
+  }
+
+  const days = load();
+  let weekStart = mondayOf(new Date());
+
+  const getDay = key => days[key] || {};
+  function setDayValue(key, field, value) {
+    const day = { ...getDay(key) };
+    if (value) day[field] = value; else delete day[field];
+    if (Object.keys(day).length) days[key] = day; else delete days[key];
+    save();
+  }
+
+  const countChecked = (id, start, length) => {
+    let n = 0;
+    for (let i = 0; i < length; i++) if (getDay(dateKey(addDays(start, i)))[id]) n++;
+    return n;
+  };
+
+  function biweekStart(d) {
+    const index = Math.floor((dayNumber(d) - dayNumber(BIWEEK_ANCHOR)) / 14);
+    return addDays(BIWEEK_ANCHOR, index * 14);
+  }
+
+  function growMemo(area) {
+    area.style.height = "auto";
+    area.style.height = area.scrollHeight + "px";
+  }
+
+  function renderHead() {
+    const tr = document.createElement("tr");
+    const corner = document.createElement("th");
+    corner.scope = "col";
+    corner.className = "col-day";
+    corner.textContent = "요일";
+    tr.appendChild(corner);
+    for (const r of ROUTINES) {
+      const th = document.createElement("th");
+      th.scope = "col";
+      th.className = "col-check" + (r.id === "gym" ? " group-start" : "");
+      th.textContent = r.name;
+      const small = document.createElement("small");
+      small.textContent = r.when;
+      th.appendChild(small);
+      tr.appendChild(th);
+    }
+    const memo = document.createElement("th");
+    memo.scope = "col";
+    memo.className = "group-start";
+    memo.textContent = "메모";
+    tr.appendChild(memo);
+    document.getElementById("thead").replaceChildren(tr);
+  }
+
+  function renderBody() {
+    const todayKey = dateKey(new Date());
+    const rows = WEEKDAYS.map((weekday, i) => {
+      const date = addDays(weekStart, i);
+      const key = dateKey(date);
+      const day = getDay(key);
+      const tr = document.createElement("tr");
+      if (key === todayKey) tr.className = "today";
+
+      const th = document.createElement("th");
+      th.scope = "row";
+      th.className = "col-day";
+      if (key === todayKey) th.setAttribute("aria-current", "date");
+      th.textContent = weekday;
+      const small = document.createElement("small");
+      small.className = "num";
+      small.textContent = shortDate(date);
+      th.appendChild(small);
+      tr.appendChild(th);
+
+      for (const r of ROUTINES) {
+        const td = document.createElement("td");
+        if (r.id === "gym") td.className = "group-start";
+        const label = document.createElement("label");
+        label.className = "check";
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = !!day[r.id];
+        box.setAttribute("aria-label", `${shortDate(date)} ${weekday}요일 ${r.name}`);
+        box.addEventListener("change", () => {
+          setDayValue(key, r.id, box.checked);
+          renderFoot();
+        });
+        label.appendChild(box);
+        td.appendChild(label);
+        tr.appendChild(td);
+      }
+
+      const memoCell = document.createElement("td");
+      memoCell.className = "group-start";
+      const area = document.createElement("textarea");
+      area.className = "memo";
+      area.rows = 1;
+      area.value = day.memo || "";
+      area.placeholder = "메모";
+      area.setAttribute("aria-label", `${shortDate(date)} ${weekday}요일 메모`);
+      area.addEventListener("input", () => {
+        setDayValue(key, "memo", area.value);
+        growMemo(area);
+      });
+      memoCell.appendChild(area);
+      tr.appendChild(memoCell);
+      return tr;
+    });
+    document.getElementById("tbody").replaceChildren(...rows);
+    document.querySelectorAll(".memo").forEach(growMemo);
+  }
+
+  function renderFoot() {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.scope = "row";
+    th.className = "col-day";
+    th.textContent = "합계";
+    tr.appendChild(th);
+
+    for (const r of ROUTINES) {
+      const td = document.createElement("td");
+      td.className = "num" + (r.id === "gym" ? " group-start" : "");
+      if (r.goal === "biweekly") {
+        const start = biweekStart(weekStart);
+        const n = countChecked(r.id, start, 14);
+        if (n >= 1) td.classList.add("met");
+        td.textContent = `${n} / 1회`;
+        const small = document.createElement("small");
+        small.textContent = `${shortDate(start)}~${shortDate(addDays(start, 13))}`;
+        td.appendChild(small);
+      } else {
+        const goal = r.goal === "weekly" ? WEEKLY_GOAL : 7;
+        const n = countChecked(r.id, weekStart, 7);
+        if (n >= goal) td.classList.add("met");
+        td.textContent = r.goal === "weekly" ? `${n} / ${goal}회` : `${n} / ${goal}일`;
+      }
+      tr.appendChild(td);
+    }
+
+    const note = document.createElement("td");
+    note.className = "group-start foot-note";
+    note.textContent = "매일 네 가지를 모두 하면 55분이에요.";
+    tr.appendChild(note);
+    document.getElementById("tfoot").replaceChildren(tr);
+  }
+
+  function renderWeek() {
+    const end = addDays(weekStart, 6);
+    document.getElementById("weekLabel").textContent =
+      `${weekStart.getFullYear()}년 ${shortDate(weekStart)} ~ ${shortDate(end)}`;
+    document.getElementById("thisWeek").hidden = dateKey(weekStart) === dateKey(mondayOf(new Date()));
+    renderBody();
+    renderFoot();
+  }
+
+  document.getElementById("prevWeek").addEventListener("click", () => { weekStart = addDays(weekStart, -7); renderWeek(); });
+  document.getElementById("nextWeek").addEventListener("click", () => { weekStart = addDays(weekStart, 7); renderWeek(); });
+  document.getElementById("thisWeek").addEventListener("click", () => { weekStart = mondayOf(new Date()); renderWeek(); });
+
+  renderHead();
+  renderWeek();
+</script>
+</body>
+</html>
