@@ -226,7 +226,7 @@
 <script>
   const STORAGE_KEY = "our-home-ledger-v1";
   const CATS = {
-    out: ["식비", "생활용품", "주거·관리비", "교통", "통신", "의료", "교육", "여가", "기타"],
+    out: ["식비", "간식비", "생활용품", "주거·관리비", "교통", "유류비", "통신", "의료", "교육", "여가", "기타"],
     in: ["월급", "용돈", "부수입", "기타 수입"],
   };
   const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -339,6 +339,17 @@
     $("fMemo").focus({ preventScroll: true });
   }
   $("cancelEdit").addEventListener("click", () => { resetForm(); render(); });
+
+  // 한글 입력 중 Enter: 글자 조합이 끝난 뒤에 적기를 해서 마지막 글자가 빠지거나 남지 않게 해요
+  $("form").addEventListener("keydown", ev => {
+    if (ev.key !== "Enter" && ev.keyCode !== 229) return;
+    if (!(ev.isComposing || ev.keyCode === 229)) return;
+    if (ev.target.tagName !== "INPUT") return;
+    ev.preventDefault();
+    if (ev.key === "Enter" || ev.code === "Enter" || ev.code === "NumpadEnter") {
+      setTimeout(() => $("form").requestSubmit(), 30);
+    }
+  });
 
   $("form").addEventListener("submit", ev => {
     ev.preventDefault();
