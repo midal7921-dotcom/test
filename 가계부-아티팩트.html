@@ -104,7 +104,7 @@
   .type-toggle button { border: none; background: transparent; padding: 9px 22px; font-weight: 700; color: var(--ink-soft); }
   .type-toggle button.on[data-type="out"] { background: var(--expense); color: var(--on-accent); }
   .type-toggle button.on[data-type="in"] { background: var(--income); color: var(--on-accent); }
-  .fields { display: grid; grid-template-columns: 150px 1fr 140px 150px; gap: 8px; }
+  .fields { display: grid; grid-template-columns: 1fr 140px 150px 150px; gap: 8px; }
   .fields input, .fields select {
     font: inherit; color: var(--ink); background: var(--sheet);
     border: none; border-bottom: 1.5px solid var(--rule-strong); border-radius: 0;
@@ -163,7 +163,7 @@
   .toast.bad { color: var(--expense); }
   .note { text-align: center; color: var(--ink-soft); font-size: .82rem; margin: 0; }
 
-  @media (max-width: 640px) {
+  @media (max-width: 760px) {
     .summary { grid-template-columns: 1fr; }
     .fields { grid-template-columns: 1fr 1fr; }
     .fields #fMemo { grid-column: 1 / -1; order: -1; }
@@ -202,10 +202,10 @@
         <button type="button" data-type="in">수입</button>
       </div>
       <div class="fields">
-        <input id="fDate" type="date" aria-label="날짜">
         <input id="fMemo" type="text" placeholder="내용 (예: 마트 장보기)" maxlength="40" aria-label="내용" autocomplete="off">
         <input id="fAmount" class="num" type="text" inputmode="numeric" placeholder="금액" aria-label="금액(원)" autocomplete="off">
         <select id="fCat" aria-label="분류"></select>
+        <input id="fDate" type="date" aria-label="날짜">
       </div>
       <div class="form-actions">
         <p class="error" id="formError" hidden></p>
@@ -355,6 +355,12 @@
     $("fMemo").focus({ preventScroll: true });
   }
   $("cancelEdit").addEventListener("click", () => { resetForm(); render(); });
+
+  // 지출·수입, 적기, 취소 버튼을 눌러도 커서가 입력칸에서 빠져나가지 않게 해요.
+  // 커서가 글자 칸을 떠나지 않으면 한/영 상태도 그대로 남아요.
+  for (const b of document.querySelectorAll(".type-toggle button, #submitBtn, #cancelEdit")) {
+    b.addEventListener("mousedown", ev => ev.preventDefault());
+  }
 
   // 한글 입력 중 Enter: 글자 조합이 끝난 뒤에 적기를 해서 마지막 글자가 빠지거나 남지 않게 해요
   $("form").addEventListener("keydown", ev => {
@@ -615,7 +621,7 @@
     col = db.collection("data/users/" + uid);
     col.onSnapshot(snap => {
       entries = snap.docs.filter(d => d.exists).map(d => cleanOne({ ...(d.data() || {}), id: d.id }, d.id)).filter(Boolean);
-      if (!loaded) { loaded = true; setEnabled(true); }
+      if (!loaded) { loaded = true; setEnabled(true); $("fMemo").focus({ preventScroll: true }); }
       if (!snap.metadata.fromCache) setStatus("🔒 내 계정에 저장 중", "live");
       render();
     }, () => {
